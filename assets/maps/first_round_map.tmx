@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="20" height="15" tilewidth="64" tileheight="64" infinite="0" nextlayerid="3" nextobjectid="7">
+ <tileset firstgid="1" source="../../../brick_tile.tsx"/>
+ <tileset firstgid="2" source="../../../FieldsTile_01_64x64.tsx"/>
+ <tileset firstgid="3" source="../../../field_tile.tsx"/>
+ <layer id="1" name="tileset layer" width="20" height="15">
+  <data encoding="csv">
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,3,3,
+3,3,3,3,3,2,2,2,2,2,2,2,3,3,3,3,2,2,3,3,
+3,3,3,3,3,2,2,2,2,2,2,2,3,3,3,3,2,2,3,3,
+3,3,3,3,3,2,2,3,3,3,2,2,3,3,3,3,2,2,3,3,
+3,3,3,3,3,2,2,3,3,3,2,2,3,3,3,3,2,2,3,3,
+2,2,2,2,2,2,2,3,3,3,2,2,3,3,3,3,2,2,3,3,
+2,2,2,2,2,2,2,3,3,3,2,2,3,3,3,3,2,2,3,3,
+3,3,3,3,3,3,3,3,3,3,2,2,3,3,3,3,2,2,3,3,
+3,3,3,3,3,3,3,3,3,3,2,2,3,3,3,3,2,2,3,3,
+3,3,3,3,3,3,3,3,3,3,2,2,3,3,3,3,2,2,3,3,
+3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,3,3,
+3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
+3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3
+</data>
+ </layer>
+ <objectgroup id="2" name="Path">
+  <object id="1" name="Starting point" x="-2.11518" y="351.12" width="64" height="64"/>
+  <object id="2" name="end point" x="1055.47" y="10.5759" width="64" height="64"/>
+  <object id="6" x="1283.91" y="503.412" width="2.11518"/>
+ </objectgroup>
+</map>
