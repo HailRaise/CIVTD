@@ -39,4 +39,6 @@ def load_map_and_path(map_path: str, tile_scaling: float):
             else:
                 print("[WARNING] Path object has no valid shape")
 
+                
+    enemy_path = [spawn_point] + enemy_path
     return tile_map, scene, spawn_point, enemy_path

@@ -2,31 +2,39 @@ import arcade
 
 class Enemy(arcade.Sprite):
     def __init__(self, spawn_point, path, speed=2):
-        super().__init__("assets/enemies/warrior.png", scale=0.1)
+        super().__init__(":resources:images/enemies/slimeBlock.png", scale=0.5)  # Use this texture for now to be sure
+        self.center_x, self.center_y = spawn_point
         self.path = path
         self.path_index = 0
         self.speed = speed
 
-        # Spawn enemy at the given spawn point
-        self.center_x, self.center_y = spawn_point
-        print(f"[DEBUG] Spawn enemy at: {self.center_x}, {self.center_y}")
-        print(f"[DEBUG] Path to follow: {self.path}")
+        print(f"[DEBUG] Spawn at {spawn_point}")
+        print(f"[DEBUG] Full path: {self.path}")
 
-    def update(self):
+        # Fix: skip first point if it's the same as spawn
+        if self.path and self.path[0] == spawn_point:
+            self.path_index = 1
+
+    def update(self, delta_time: float = 1/60):
+        print("[DEBUG] Enemy.update() called")
+
         if self.path_index >= len(self.path):
-            print("[DEBUG] Enemy reached end of path.")
+            print("[DEBUG] Enemy finished path.")
             return
 
         dest_x, dest_y = self.path[self.path_index]
-        print(f"[DEBUG] Enemy at ({self.center_x:.2f}, {self.center_y:.2f}), moving towards ({dest_x}, {dest_y})")
+        print(f"[DEBUG] From: ({self.center_x:.2f}, {self.center_y:.2f}) → To: ({dest_x:.2f}, {dest_y:.2f})")
 
-        self.center_x, self.center_y = arcade.move_towards_point(
-            (self.center_x, self.center_y),
-            (dest_x, dest_y),
-            self.speed
-        )
+        dx = dest_x - self.center_x
+        dy = dest_y - self.center_y
+        distance = (dx ** 2 + dy ** 2) ** 0.5
 
-        # If close enough, move to next path index
-        if arcade.get_distance_between_sprites(self, arcade.Sprite(center_x=dest_x, center_y=dest_y)) < self.speed:
-            print(f"[DEBUG] Enemy reached point {self.path_index}: ({dest_x}, {dest_y})")
+        if distance > 0:
+            step = min(self.speed, distance)
+            self.center_x += dx / distance * step
+            self.center_y += dy / distance * step
+            print(f"[DEBUG] Moved to: ({self.center_x:.2f}, {self.center_y:.2f})")
+
+        if distance < self.speed:
+            print(f"[DEBUG] Reached waypoint {self.path_index}")
             self.path_index += 1
