@@ -8,7 +8,7 @@ class Enemy(arcade.TextureAnimationSprite):
         self.path_index = 0
         self.speed = speed
 
-        sprite_sheet_path = "assets/enemies/Skeleton Walk.png"
+        sprite_sheet_path = "assets/enemies/warrior.png"
         frame_width = 22
         frame_height = 33
         num_frames = 13
