@@ -27,6 +27,7 @@ class TowerDefense(arcade.Window):
     def on_draw(self):
         self.clear()
         self.scene.draw()
+        self.scene["Enemies"].draw()
 
         # Optional: draw the path
         for x, y in self.enemy_path:
