@@ -9,6 +9,7 @@ class TowerMenuClass:
         self.selected_tower_type = None
         self.selected_tower_image = None
         self.selected_tower_scale = None
+        
 
     def add_icon(self, image_path: str, x: int, tower_type: str, scale: float = 0.2):
         """Add a tower icon to the menu bar"""

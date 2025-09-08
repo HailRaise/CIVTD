@@ -5,8 +5,9 @@ class Tower(arcade.Sprite):
     def __init__(self, tower_type: str, image_path: str, scale: float = 1.0):
         super().__init__(image_path, scale)
         
-        # Tower properties based on type
+        self.show_range = False
         self.tower_type = tower_type
+        self.image_path = image_path
         self.properties = self._get_tower_properties()
         
         # Attack system
@@ -29,54 +30,32 @@ class Tower(arcade.Sprite):
         """Return tower stats based on type"""
         base_stats = {
             "basic": {
-                "range": 150,
-                "damage": 15,
-                "attack_speed": 1.0,  # attacks per second
-                "cost": 100,
-                "upgrade_cost": 50,
-                "projectile_speed": 300,
+                "range": 150, "damage": 15, "attack_speed": 1.0, "cost": 100,
+                "upgrade_cost": 50, "projectile_speed": 300,
                 "description": "Basic tower with balanced stats"
             },
             "archer": {
-                "range": 200,
-                "damage": 10,
-                "attack_speed": 1.5,
-                "cost": 120,
-                "upgrade_cost": 60,
-                "projectile_speed": 400,
+                "range": 200, "damage": 10, "attack_speed": 1.5, "cost": 120,
+                "upgrade_cost": 60, "projectile_speed": 400,
                 "description": "Fast attacking archer tower"
             },
             "cannon": {
-                "range": 120,
-                "damage": 30,
-                "attack_speed": 0.7,
-                "cost": 150,
-                "upgrade_cost": 75,
-                "projectile_speed": 200,
+                "range": 120, "damage": 30, "attack_speed": 0.7, "cost": 150,
+                "upgrade_cost": 75, "projectile_speed": 200,
                 "description": "Slow but powerful cannon"
             },
             "sniper": {
-                "range": 300,
-                "damage": 25,
-                "attack_speed": 0.5,
-                "cost": 200,
-                "upgrade_cost": 100,
-                "projectile_speed": 500,
+                "range": 300, "damage": 25, "attack_speed": 0.5, "cost": 200,
+                "upgrade_cost": 100, "projectile_speed": 500,
                 "description": "Long range sniper tower"
             },
             "ice": {
-                "range": 180,
-                "damage": 5,
-                "attack_speed": 0.8,
-                "cost": 180,
-                "upgrade_cost": 90,
-                "projectile_speed": 250,
-                "slow_effect": 0.5,  # 50% speed reduction
-                "slow_duration": 3.0,
+                "range": 180, "damage": 5, "attack_speed": 0.8, "cost": 180,
+                "upgrade_cost": 90, "projectile_speed": 250,
+                "slow_effect": 0.5, "slow_duration": 3.0,
                 "description": "Slows enemies"
             }
         }
-        
         return base_stats.get(self.tower_type, base_stats["basic"])
 
     def update(self, delta_time: float):
@@ -183,13 +162,14 @@ class Tower(arcade.Sprite):
 
     def draw_range(self):
         """Draw the tower's attack range"""
-        arcade.draw_circle_outline(
-            self.center_x,
-            self.center_y,
-            self.properties["range"],
-            arcade.color.YELLOW,
-            border_width=2
-        )
+        if self.show_range:
+            arcade.draw_circle_outline(
+                self.center_x,
+                self.center_y,
+                self.properties["range"],
+                arcade.color.YELLOW,
+                border_width=2
+            )
 
     def draw_attack_effect(self):
         """Draw attack visual effect"""
@@ -230,3 +210,28 @@ class Tower(arcade.Sprite):
     def can_afford_upgrade(self, money):
         """Check if player can afford upgrade"""
         return money >= self.properties["upgrade_cost"]
+    
+    def can_upgrade(self):
+        """Check if tower can be upgraded further"""
+        return self.level < self.max_level
+    
+    def get_upgrade_cost(self):
+        """Get the cost to upgrade to next level"""
+        return self.properties["upgrade_cost"]
+    
+    def get_next_level_stats(self):
+        """Get what the stats will be after upgrade"""
+        if not self.can_upgrade():
+            return None
+            
+        return {
+            "damage": int(self.properties["damage"] * 1.2),
+            "range": int(self.properties["range"] * 1.1),
+            "attack_speed": round(self.properties["attack_speed"] * 1.1, 1),
+            "level": self.level + 1
+        }
+
+    def get_sell_value(self):
+        """Get the sell value (50% of total investment)"""
+        # Simple implementation: 50% of base cost
+        return self.properties["cost"] // 2
