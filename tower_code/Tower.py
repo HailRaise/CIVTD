@@ -1,5 +1,6 @@
 import arcade
 import math
+import random
 
 class Tower(arcade.Sprite):
     def __init__(self, tower_type: str, image_path: str, scale: float = 1.0):
@@ -17,7 +18,8 @@ class Tower(arcade.Sprite):
         
         # Level system
         self.level = 1
-        self.max_level = 3
+        self.max_level = 7
+        self.upgrade_path = None
         self.upgrade_cost = self.properties["upgrade_cost"]
         
         # Visual effects
@@ -216,22 +218,54 @@ class Tower(arcade.Sprite):
         return self.level < self.max_level
     
     def get_upgrade_cost(self):
-        """Get the cost to upgrade to next level"""
-        return self.properties["upgrade_cost"]
+        return 100 * self.level
     
-    def get_next_level_stats(self):
-        """Get what the stats will be after upgrade"""
-        if not self.can_upgrade():
-            return None
-            
-        return {
-            "damage": int(self.properties["damage"] * 1.2),
-            "range": int(self.properties["range"] * 1.1),
-            "attack_speed": round(self.properties["attack_speed"] * 1.1, 1),
-            "level": self.level + 1
-        }
+    def get_next_level_stats(self, path=None):
+        """Preview next stats without committing"""
+        if not path:
+            path = self.upgrade_path or "balanced"
+
+        new_stats = self.properties.copy()
+        if path == "damage":
+            new_stats["damage"] += 15
+        elif path == "range":
+            new_stats["attack_speed"] += 20
+            new_stats["damage"] += 5
+        elif path == "range":
+            new_stats["range"] += 25
+            new_stats["damage"] += 5
+        elif path == "gamble":
+            roll = random.choice(["jackpot", "dud", "mixed"])
+            if roll == "jackpot":
+                new_stats["damage"] += 10
+                new_stats["attack_speed"] *= 1.5
+            elif roll == "dud":
+                new_stats["damage"] = max(1, new_stats["damage"] - 5)
+                new_stats["range"] = max(50, new_stats["range"] - 20)
+            elif roll == "mixed":
+                new_stats["damage"] += 3
+                new_stats["range"] += 10
+
+
+        return new_stats
+
+    def upgrade(self, path=None):
+        if self.level >= self.max_level:
+            return False
+        if not self.upgrade_path:
+            self.upgrade_path = path  # first upgrade picks a path
+
+        if path and self.upgrade_path != path:
+            print("Can't switch paths mid-upgrade!")
+            return False
+
+        new_stats = self.get_next_level_stats(self.upgrade_path)
+        self.properties.update(new_stats)
+        self.level += 1
+        return True
 
     def get_sell_value(self):
         """Get the sell value (50% of total investment)"""
         # Simple implementation: 50% of base cost
         return self.properties["cost"] // 2
+    

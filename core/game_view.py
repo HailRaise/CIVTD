@@ -8,6 +8,7 @@ from tower_code.Tower import Tower
 from core.PlayStopBTN import PlayPauseButton
 from core.UpgradeMenu import UpgradeMenu
 from core.UpgradePathMenu import UpgradePathMenu
+from core.GambleMiniGame import GambleMiniGame
 import math
 MAP_PATH = "assets/maps/first_round_map_obj.tmx"
 
@@ -16,6 +17,7 @@ class TowerDefenseGame(arcade.View):
         super().__init__()
         self.map_path = map_path
         self.money = 1000  # Add money system
+        self.gamble_minigame = GambleMiniGame(SCREEN_WIDTH, SCREEN_HEIGHT, UI_BAR_HEIGHT)
         
         self.hovered_tower_type = None 
         self.mouse_x = 0  # Track mouse position
@@ -27,7 +29,6 @@ class TowerDefenseGame(arcade.View):
         self.selected_tower_scale = None
 
         self.play_pause_button = None
-        self.upgrade_menu = None
         
         self.play_pause_button = PlayPauseButton(
         SCREEN_WIDTH - 100,  # x position
@@ -58,7 +59,6 @@ class TowerDefenseGame(arcade.View):
         self.tower_menu = TowerMenuClass(UI_BAR_HEIGHT)
         self.scene.add_sprite_list("Towers")
         self.tower_menu.add_icon("assets/free-archer-towers-pixel-art-for-tower-defense/1 Upgrade/first_build.png", 60, "basic")
-        self.upgrade_menu = UpgradeMenu(SCREEN_WIDTH, SCREEN_HEIGHT, UI_BAR_HEIGHT)
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         """Update mouse position and handle hover effects"""
@@ -81,6 +81,8 @@ class TowerDefenseGame(arcade.View):
     def on_draw(self):
         self.clear()
         self.scene.draw()
+        self.upgrade_path_menu.draw(self.money)
+        
         
         # Draw enemies (they handle their own drawing including death animations)
         for enemy in self.scene["Enemies"]:
@@ -140,7 +142,9 @@ class TowerDefenseGame(arcade.View):
                 12
             )
         
-        # Draw UI bar
+        
+        
+        # Draw UI bar (AFTER menus so menus appear on top)
         arcade.draw_lbwh_rectangle_filled(
             0,                # left
             0,                # bottom
@@ -160,71 +164,73 @@ class TowerDefenseGame(arcade.View):
 
         # Draw play/pause button
         self.play_pause_button.draw()
-        arcade.draw_text(
-        f"Menu: Visible={self.upgrade_menu.visible}, X={self.upgrade_menu.current_x}",
-        10, SCREEN_HEIGHT - 30, arcade.color.RED, 16
-    )
-        self.upgrade_menu.draw(self.money)
+        
+        # Debug text to see menu status (optional - can remove later)
+        if self.upgrade_path_menu.visible:
+            arcade.draw_text(
+                f"Path Menu: X={self.upgrade_path_menu.current_x}",
+                10, SCREEN_HEIGHT - 60, arcade.color.BLUE, 16
+            )
+
+        self.gamble_minigame.draw()
 
     def on_mouse_press(self, x, y, button, modifiers):
-        # First, check if the user clicked the upgrade path menu
+        if hasattr(self, 'gamble_minigame') and self.gamble_minigame.visible:
+            print("Minigame is visible, checking click...")
+            if self.gamble_minigame.animation_phase == 2:  # Result shown
+                self.gamble_minigame.hide()
+                print("Hiding minigame after result")
+                return
+            elif self.gamble_minigame.check_click(x, y):
+                print("Minigame button clicked")
+                return
+            else:
+                print("Click was not on minigame button")
+         # First, check if the user clicked the upgrade path menu
         if self.upgrade_path_menu.visible and self.upgrade_path_menu.current_x > -300:
             selected_path = self.upgrade_path_menu.check_click(x, y)
             if selected_path:
-                tower = self.upgrade_path_menu.selected_tower
-                upgrade_cost = tower.get_upgrade_cost()
+                print(f"DEBUG: Selected path = {selected_path}")  # ADD THIS DEBUG PRINT
                 
-                if self.money >= upgrade_cost:
-                    self.money -= upgrade_cost
-                    success = tower.upgrade(selected_path)
-                    if success:
-                        print(f"Upgraded {tower.tower_type} to level {tower.level} via {selected_path} path")
-                        # Show upgraded stats
-                        print(f"New stats - Damage: {tower.properties['damage']}, Range: {tower.properties['range']}, Speed: {tower.properties['attack_speed']:.1f}")
-                else:
-                    print(f"Not enough money for upgrade! Need ${upgrade_cost}, have ${self.money}")
-                
-                self.upgrade_path_menu.hide()
-                return
-        
-        # Then check if the user clicked the main upgrade menu
-        if self.upgrade_menu.visible and self.upgrade_menu.current_x > -200:
-            menu_action = self.upgrade_menu.check_click(x, y)
-            if menu_action:
-                print(f"Menu action detected: {menu_action}")  # Add this debug line
-                
-                if menu_action == "upgrade":
-                    # UPGRADE LOGIC SHOULD BE HERE
-                    print("Upgrade button clicked - processing upgrade...")
+                # CHECK FOR GAMBLE MINIGAME SPECIFICALLY
+                if selected_path == "gamble_minigame":
+                    print("🎰 GAMBLE MINIGAME TRIGGERED!")
+                    tower = self.upgrade_path_menu.selected_tower
+                    upgrade_cost = tower.get_upgrade_cost()
                     
-                    if self.upgrade_menu.selected_tower.can_upgrade():
-                        upgrade_cost = self.upgrade_menu.selected_tower.get_upgrade_cost()
-                        print(f"Upgrade cost: {upgrade_cost}, Money: {self.money}")
-                        
-                        if self.money >= upgrade_cost:
-                            self.money -= upgrade_cost
-                            success = self.upgrade_menu.selected_tower.upgrade()
-                            print(f"Upgrade successful: {success}")
-                        else:
-                            print("Not enough money for upgrade!")
+                    if self.money >= upgrade_cost:
+                        self.money -= upgrade_cost
+                        self.upgrade_path_menu.hide()
+                        self.gamble_minigame.show(tower, [self.money])
+                        print("Minigame opened successfully!")
                     else:
-                        print("Tower is already at maximum level!")
-
-                elif menu_action == "sell":
-                    print("sell button was clicked")
-                    sell_value = self.upgrade_menu.selected_tower.get_sell_value()
-                    self.money += sell_value
-                    self.scene["Towers"].remove(self.upgrade_menu.selected_tower)
-
-
+                        print(f"Not enough money for gamble! Need ${upgrade_cost}")
+                    return
+                else:
+                    # Handle regular upgrades (damage, range, speed)
+                    tower = self.upgrade_path_menu.selected_tower
+                    upgrade_cost = tower.get_upgrade_cost()
+                    
+                    if self.money >= upgrade_cost:
+                        self.money -= upgrade_cost
+                        success = tower.upgrade(selected_path)
+                        if success:
+                            print(f"Upgraded via {selected_path} path")
+                            self.upgrade_path_menu.show(tower)
+                        else:
+                            print("Upgrade failed")
+                            self.upgrade_path_menu.hide()
+                    else:
+                        print(f"Not enough money! Need ${upgrade_cost}, have ${self.money}")
+                    return
+        
         # Check if clicking on tower menu icons (this should come BEFORE upgrade menu check)
         tower_clicked = arcade.get_sprites_at_point((x, y), self.tower_menu.icons)
         if tower_clicked:
             clicked_icon = tower_clicked[-1]
             
             # Close all menus when selecting new tower
-            if self.upgrade_menu.visible:
-                self.upgrade_menu.hide()
+
             if self.upgrade_path_menu.visible:
                 self.upgrade_path_menu.hide()
             
@@ -269,9 +275,7 @@ class TowerDefenseGame(arcade.View):
         # Check if clicking on an existing tower to select it
         existing_tower_clicked = arcade.get_sprites_at_point((x, y), self.scene["Towers"])
         if existing_tower_clicked:
-            # Close all menus first
-            if self.upgrade_menu.visible:
-                self.upgrade_menu.hide()
+            # Close upgrade menu first
             if self.upgrade_path_menu.visible:
                 self.upgrade_path_menu.hide()
             
@@ -285,24 +289,20 @@ class TowerDefenseGame(arcade.View):
             if hasattr(self.active_tower, 'show_range'):
                 self.active_tower.show_range = True
             
-            # Show upgrade menu for this tower
-            self.upgrade_menu.show(self.active_tower)
+            # Show upgrade path menu for this tower
+            self.upgrade_path_menu.show(self.active_tower)  # REMOVE THE if/else CONDITION
             
             print(f"Selected tower: {self.active_tower.tower_type} (Level {self.active_tower.level})")
             
             # Clear any tower placement selection
             self.selected_tower_type = None
             self.ghost_tower = None
-            if hasattr(self.tower_menu, 'selected_tower_type'):
-                self.tower_menu.selected_tower_type = None
             
             return
 
         # If we have a ghost tower (tower selected) and click is ABOVE the UI bar
         if self.ghost_tower and y > UI_BAR_HEIGHT:
             # Close all menus
-            if self.upgrade_menu.visible:
-                self.upgrade_menu.hide()
             if self.upgrade_path_menu.visible:
                 self.upgrade_path_menu.hide()
             
@@ -343,11 +343,15 @@ class TowerDefenseGame(arcade.View):
                 if hasattr(tower, 'show_range'):
                     tower.show_range = False
             self.active_tower = None
-            if self.upgrade_menu.visible:
-                self.upgrade_menu.hide()
             if self.upgrade_path_menu.visible:
                 self.upgrade_path_menu.hide()
         
+        # If clicking on UI bar area, just hide ranges but keep menus
+        else:
+            for tower in self.scene["Towers"]:
+                if hasattr(tower, 'show_range'):
+                    tower.show_range = False
+            self.active_tower = None
 
     def on_key_press(self, key, modifiers):
         """Handle key presses - ESC to return to menu or cancel tower placement"""
@@ -415,6 +419,8 @@ class TowerDefenseGame(arcade.View):
                     projectile.remove_from_sprite_lists()
 
     def on_update(self, delta_time):
+        self.gamble_minigame.update(delta_time)
+
         if self.play_pause_button and self.play_pause_button.is_paused:
             return
         self.scene.update(delta_time)
@@ -423,7 +429,7 @@ class TowerDefenseGame(arcade.View):
 
         # Spawn new enemies
         if self.enemy_spawn_timer > 1.0 and self.enemies_spawned < self.total_enemies_to_spawn:
-            enemy = Enemy(self.spawn_point, self.enemy_path)
+            enemy = spawn_enemy(self.spawn_point, self.enemy_path)
             self.scene["Enemies"].append(enemy)
             self.enemies_spawned += 1
             self.enemy_spawn_timer = 0.0
@@ -444,12 +450,8 @@ class TowerDefenseGame(arcade.View):
         for enemy in enemies_to_remove:
             self.scene["Enemies"].remove(enemy)
         
-        self.upgrade_menu.update()
+        self.upgrade_path_menu.update()
     
         # Update towers and their attacks
         self.update_towers(delta_time)
 
-
-# if __name__ == "__main__":
-#     game = TowerDefense()
-#     arcade.run()

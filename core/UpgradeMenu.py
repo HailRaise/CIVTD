@@ -6,8 +6,8 @@ class UpgradeMenu:
         self.screen_height = screen_height
         self.ui_bar_height = ui_bar_height
         self.visible = False
-        self.target_x = -300
-        self.current_x = -300
+        self.target_x = screen_width
+        self.current_x = screen_width
         self.width = 250
         self.height = screen_height - ui_bar_height
         self.selected_tower = None
@@ -35,17 +35,17 @@ class UpgradeMenu:
         # Use the image path stored in the tower
         self.tower_image_path = tower.image_path
         
-        # Handle scale - it might be a tuple (scale_x, scale_y)
+        # Handle scale - REDUCE the scaling factor
         if hasattr(tower, 'scale'):
             if isinstance(tower.scale, (tuple, list)):
-                # If scale is a tuple like (scale_x, scale_y), use the first value
-                self.tower_scale = tower.scale[0] * 1.5
+                # Use a much smaller scale for the menu
+                self.tower_scale = tower.scale[0] * 0.5  # Reduced from 1.5 to 0.5
             else:
-                # If scale is a single number
-                self.tower_scale = tower.scale * 1.5
+                # Use a much smaller scale for the menu
+                self.tower_scale = tower.scale * 0.5  # Reduced from 1.5 to 0.5
         else:
             # Fallback if scale attribute doesn't exist
-            self.tower_scale = 1.5
+            self.tower_scale = 0.8  # Reduced from 1.5
         
         print(f"Tower scale: {tower.scale} (type: {type(tower.scale)})")
         print(f"Menu scale: {self.tower_scale}")
@@ -60,12 +60,12 @@ class UpgradeMenu:
             self.tower_sprite = arcade.Sprite(":resources:images/items/coinGold.png", 0.5)
         
         self.visible = True
-        self.target_x = 0
+        self.target_x = self.screen_width - self.width
     
     def hide(self):
         """Hide the menu"""
         self.visible = False
-        self.target_x = -300
+        self.target_x = self.screen_width
         self.selected_tower = None
         self.tower_sprite = None
     
@@ -83,7 +83,7 @@ class UpgradeMenu:
     
     def draw(self, money):
         """Draw the menu"""
-        if not self.visible and self.current_x <= -self.width:
+        if not self.visible and self.current_x >= self.screen_width:
             return
             
         # Draw background using lbwh (left, bottom, width, height)
@@ -258,7 +258,7 @@ class UpgradeMenu:
     
     def check_click(self, x, y):
         """Check if any menu button was clicked"""
-        if not self.visible or self.current_x <= -self.width + 50:
+        if not self.visible or self.current_x >= self.screen_width:
             return None
             
         # Convert click position to menu coordinates
