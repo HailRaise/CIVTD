@@ -155,9 +155,10 @@ class UpgradeMenu:
             )
             
             # Draw buttons using lbwh
-            button_y_start = self.ui_bar_height + self.height - 100
+            button_y_start = self.ui_bar_height + self.height - 500
             
             # Upgrade button (only show if can upgrade)
+            upgrade_bottom = button_y_start - 50
             if self.selected_tower.can_upgrade():
                 upgrade_cost = self.selected_tower.get_upgrade_cost()
                 can_afford = money >= upgrade_cost
@@ -190,23 +191,35 @@ class UpgradeMenu:
                         arcade.color.LIGHT_GREEN,
                         12
                     )
-            else:
-                # Show max level message using lbwh
+            elif self.selected_tower.level == self.selected_tower.max_level:
+                # Tower is at MAX level - show grayed out message
                 arcade.draw_lbwh_rectangle_filled(
-                    self.current_x + 25,
-                    button_y_start - 50,
-                    200,
-                    50,
-                    arcade.color.GRAY
+                    self.current_x + 25, upgrade_bottom, 200, 50, arcade.color.GRAY
                 )
                 
                 arcade.draw_text(
                     "MAX LEVEL REACHED",
                     self.current_x + 30,
-                    button_y_start - 25,
+                    upgrade_bottom + 25, 
                     arcade.color.WHITE,
                     16
                 )
+            else:
+                print("DEBUG: Tower exists but cannot be upgraded yet")
+                # DON'T DRAW ANYTHING HERE or draw a disabled button
+                # This prevents the max level text from appearing when it shouldn't
+                arcade.draw_lbwh_rectangle_filled(
+                    self.current_x + 25, button_y_start - 50, 200, 50, arcade.color.DARK_GRAY
+                )
+                
+                arcade.draw_text(
+                    "Cannot Upgrade Yet",
+                    self.current_x + 40,
+                    button_y_start - 25,
+                    arcade.color.LIGHT_GRAY,
+                    16
+                )
+            
             
             # Sell button using lbwh
             sell_value = self.selected_tower.get_sell_value()
@@ -256,7 +269,7 @@ class UpgradeMenu:
             return None
         
         # Calculate button positions based on the new layout
-        button_y_start = self.ui_bar_height + self.height - 100
+        button_y_start = self.ui_bar_height + self.height - 500
         
         # Check upgrade button (if available)
         if self.selected_tower and self.selected_tower.can_upgrade():
@@ -264,6 +277,7 @@ class UpgradeMenu:
             upgrade_top = button_y_start
             if (25 <= menu_x <= 225 and 
                 upgrade_bottom <= y <= upgrade_top):
+                print(f"Click in upgrade area: {25 <= menu_x <= 225 and upgrade_bottom <= y <= upgrade_top}")
                 return "upgrade"
         
         # Check sell button
