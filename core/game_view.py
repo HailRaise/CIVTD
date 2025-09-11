@@ -9,16 +9,18 @@ from core.PlayStopBTN import PlayPauseButton
 from core.UpgradeMenu import UpgradeMenu
 from core.UpgradePathMenu import UpgradePathMenu
 from core.GambleMiniGame import GambleMiniGame
+from core.LevelData import LevelData
+from core.LevelManager import LevelManager
 import math
-MAP_PATH = "assets/maps/first_round_map_obj.tmx"
 
 class TowerDefenseGame(arcade.View):
-    def __init__(self, map_path="assets/maps/first_round_map_obj.tmx"):
+    def __init__(self, level_data):
         super().__init__()
-        self.map_path = map_path
-        self.money = 1000  # Add money system
+        self.map_path = level_data.map_path
         self.gamble_minigame = GambleMiniGame(SCREEN_WIDTH, SCREEN_HEIGHT, UI_BAR_HEIGHT)
-        
+        self.money = level_data.money_start
+        self.lives = level_data.lives
+        self.waves = level_data.waves
         self.hovered_tower_type = None 
         self.mouse_x = 0  # Track mouse position
         self.mouse_y = 0
@@ -53,7 +55,11 @@ class TowerDefenseGame(arcade.View):
         self.scene.add_sprite_list("Enemies", use_spatial_hash=True)
         self.enemy_spawn_timer = 0.0
         self.enemies_spawned = 0
-        self.total_enemies_to_spawn = 15
+        self.current_wave = 0
+        self.current_wave_spawned = 0
+        self.total_enemies_to_spawn = self.waves[self.current_wave]["count"]
+        self.enemy_spawn_rate = self.waves[self.current_wave]["spawn_rate"]
+        self.enemy_type = self.waves[self.current_wave]["enemy"]
 
         # Setup towers
         self.tower_menu = TowerMenuClass(UI_BAR_HEIGHT)
@@ -428,15 +434,24 @@ class TowerDefenseGame(arcade.View):
         self.enemy_spawn_timer += delta_time
 
         # Spawn new enemies
-        if self.enemy_spawn_timer > 1.0 and self.enemies_spawned < self.total_enemies_to_spawn:
+        if self.enemy_spawn_timer > self.enemy_spawn_rate and self.current_wave_spawned < self.total_enemies_to_spawn:
             enemy = spawn_enemy(self.spawn_point, self.enemy_path)
             self.scene["Enemies"].append(enemy)
-            self.enemies_spawned += 1
+            self.current_wave_spawned += 1
             self.enemy_spawn_timer = 0.0
 
         # Update enemies individually to handle death animations
         for enemy in self.scene["Enemies"]:
             enemy.update(delta_time)
+        if self.current_wave_spawned >= self.total_enemies_to_spawn and not self.scene["Enemies"]:
+            self.current_wave += 1
+        if self.current_wave < len(self.waves):
+            self.current_wave_spawned = 0
+            self.total_enemies_to_spawn = self.waves[self.current_wave]["count"]
+            self.enemy_spawn_rate = self.waves[self.current_wave]["spawn_rate"]
+            self.enemy_type = self.waves[self.current_wave]["enemy"]
+        else:
+            print("Level complete!")
 
         # Remove dead enemies that finished their animation
         enemies_to_remove = []
